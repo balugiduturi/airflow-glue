@@ -1,0 +1,28 @@
+﻿services:
+  glue-dev:
+    image: amazon/aws-glue-libs:glue_libs_4.0.0_image_01
+    container_name: local-glue
+    working_dir: /home/glue_user/workspace
+    ports:
+      - "8888:8888"     # JupyterLab UI
+      - "4040:4040"     # Live Spark UI (active while jobs/notebooks are running)
+      - "18080:18080"   # Spark History Server (Spark UI for all completed jobs)
+    environment:
+      - DISABLE_SSL=true
+      - AWS_DEFAULT_REGION=ap-south-1 # Set to your new account's region
+      - AWS_PROFILE=giduturi-tutorial-profile # Put your new profile name here
+    volumes:
+      - ../../src/jobs:/home/glue_user/workspace/jobs
+      - ../../mock_data:/home/glue_user/workspace/mock_data
+      - ~/.aws:/home/glue_user/.aws:ro
+    networks:
+      - data-network        
+    command:
+      - -c
+      - |
+        sed -i 's/rootLogger.level = info/rootLogger.level = warn/g' /home/glue_user/spark/conf/log4j2.properties
+        livy-server start
+        jupyter lab --no-browser --ip=0.0.0.0 --allow-root --ServerApp.root_dir=/home/glue_user/workspace/ --ServerApp.token='' --ServerApp.password=''
+networks:
+  data-network:
+    external: true
