@@ -1,6 +1,7 @@
 import sys
 from awsglue.transforms import *
 from awsglue.utils import getResolvedOptions
+from pyspark.conf import SparkConf
 from pyspark.context import SparkContext
 from awsglue.context import GlueContext
 from awsglue.job import Job
@@ -10,8 +11,14 @@ from pyspark.sql.types import *
 from pyspark.sql.functions import *
 from pyspark.sql.window import Window
 
-# Initialize Glue Context
-sc = SparkContext.getOrCreate()
+# Initialize Glue Context with Delta Lake extensions and catalog
+conf = (
+    SparkConf()
+    .set("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
+    .set("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
+    .set("spark.delta.logStore.class", "org.apache.spark.sql.delta.storage.S3SingleDriverLogStore")
+)
+sc = SparkContext.getOrCreate(conf=conf)
 glueContext = GlueContext(sc)
 spark = glueContext.spark_session
 job = Job(glueContext)
